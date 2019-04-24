@@ -113,6 +113,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--date", help="today or format DD/MM/YY")
     parser.add_argument("-c", "--caderno", help="legislativo, exec1, etc")
     parser.add_argument("-u", "--upload", help="Upload to slack?", nargs="?", const=True)
+    parser.add_argument("-f", "--force", help="Force new file", nargs="?", const=True)
     args = parser.parse_args()
 
     if args.date == "today":
@@ -126,7 +127,7 @@ if __name__ == "__main__":
     caderno = args.caderno
 
     x = DO(ano,mes,dia,caderno, SETTINGS['slack'])
-    if not os.path.isfile("data/"+x.do_filepath):
+    if not os.path.isfile("data/"+x.do_filepath) or args.force:
         print("Getting "+x.do_filepath)
         x.getDO()
         if x.pg > 1:
