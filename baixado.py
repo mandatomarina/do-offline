@@ -105,6 +105,7 @@ class DO:
             }
 
             r = requests.post("https://slack.com/api/files.upload", params=payload, files={ 'file' : arquivo })
+            return r
 
 if __name__ == "__main__":
 
@@ -137,4 +138,5 @@ if __name__ == "__main__":
     else:
         print(x.do_filepath+" already exists")
         if args.upload:
-            x.uploadDO()
+            resposta = x.uploadDO()
+            print(resposta.content)
