@@ -3,5 +3,13 @@ SETTINGS = {
  "slack" : {
     "token" : "PUT YOUR TOKEN",
     "channels" : ["PUT YOUR CHANNEL"]
-    }
+    },
+"email" : {
+  "from" : "email@provider.com",
+  "to" : ["email@provider.com"],
+  "server" : "smtp.gmail.com",
+  "port" : 597,
+  "user" : "user@email.com",
+  "pass" : "password"
+  }
   }

@@ -10,10 +10,11 @@ import fitz
 import argparse
 
 from settings import *
+import sendmail
 
 MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 class DO:
-    def __init__(self, ano, mes, dia, caderno, slackconfig):
+    def __init__(self, ano, mes, dia, caderno, settings):
         self.ano = ano
         self.mes = mes
         self.dia = str(dia).zfill(2)
@@ -23,7 +24,7 @@ class DO:
         self.local_path = "data/raw/"
         self.path = "{}/{}/{}/{}/pdf/".format(self.ano,self.mes,self.dia,self.caderno)
         self.do_filepath = "DO_{}_{}_{}_{}.pdf".format(self.caderno,self.ano,unidecode.unidecode(self.mes),self.dia)
-        self.slack = slackconfig
+        self.settings=settings
 
     def filename(self):
         return "pg_{}.pdf".format(str(self.pg).zfill(4))
@@ -75,6 +76,7 @@ class DO:
             merger.write(fout)
 
     def highlightDO(self, words):
+        color = None
         doc = fitz.open("data/tmp/"+self.do_filepath)
         print(doc)
         for page in doc:
@@ -83,6 +85,8 @@ class DO:
                 print(matches)
                 for match in matches:
                     highlight = page.addHighlightAnnot(match)
+                    if color:
+                        highlight.setColors({"stroke":(0, 0, 1), "fill":(0.75, 0.8, 0.95)})
         doc.save("data/tmp/h_"+self.do_filepath)
 
 
@@ -96,16 +100,20 @@ class DO:
         gsproc = subprocess.call(gscmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     def uploadDO(self):
-        with open("data/"+self.do_filepath, 'rb') as arquivo:
-            payload={
-              "filename":self.do_filepath,
-              "filetype":'pdf',
-              "token": self.slack['token'],
-              "channels": self.slack['channels'],
-            }
+        if "slack" in self.settings:
+            with open("data/"+self.do_filepath, 'rb') as arquivo:
+                payload={
+                  "filename":self.do_filepath,
+                  "filetype":'pdf',
+                  "token": self.settings['slack']['token'],
+                  "channels": self.settings['slack']['channels'],
+                }
 
-            r = requests.post("https://slack.com/api/files.upload", params=payload, files={ 'file' : arquivo })
-            return r
+                r = requests.post("https://slack.com/api/files.upload", params=payload, files={ 'file' : arquivo })
+                return r
+        if "email" in self.settings:
+            sendmail.send(self.do_filepath, "Gerado via baixado.py",
+                          self.do_filepath, open("data/"+self.do_filepath, 'rb'), self.settings["email"])
 
 if __name__ == "__main__":
 
@@ -126,7 +134,7 @@ if __name__ == "__main__":
     dia = d.day
     caderno = args.caderno
 
-    x = DO(ano,mes,dia,caderno, SETTINGS['slack'])
+    x = DO(ano,mes,dia,caderno, SETTINGS)
     if not os.path.isfile("data/"+x.do_filepath) or args.force:
         print("Getting "+x.do_filepath)
         x.getDO()
@@ -140,4 +148,3 @@ if __name__ == "__main__":
         print(x.do_filepath+" already exists")
         if args.upload:
             resposta = x.uploadDO()
-            print(resposta.content)
