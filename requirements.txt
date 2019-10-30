@@ -2,7 +2,7 @@
 # https://github.com/damnever/pigar
 
 # script.py: 1
-PyPDF2 == 1.26.0
+git+https://github.com/mandatomarina/PyPDF2
 
 # script.py: 8
 Unidecode == 1.0.23
