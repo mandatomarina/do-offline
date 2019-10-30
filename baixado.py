@@ -30,12 +30,10 @@ class DO:
         return "pg_{}.pdf".format(str(self.pg).zfill(4))
 
     def getPagina(self):
-        print("Baixando pg "+str(self.pg))
         if not os.path.exists(self.local_path + self.path):
             os.makedirs(self.local_path + self.path)
 
         url = self.base_url + urllib.parse.quote(self.path) + self.filename()
-        print(url)
         resp = requests.get(url)
 
         if resp.status_code == 200:
@@ -63,26 +61,21 @@ class DO:
     def mergeDO(self):
         x = [a for a in os.listdir(self.local_path + self.path) if a.endswith(".pdf")]
         x.sort()
-        print(x)
-
-        merger = PdfFileMerger()
+        merger = PdfFileMerger(strict=False)
 
         for pdf in x:
             pg = PdfFileReader(self.local_path + self.path + pdf)
             merger.append(pg)
 
         with open("data/tmp/"+self.do_filepath, "wb") as fout:
-            print(fout)
             merger.write(fout)
 
     def highlightDO(self, words):
         color = None
         doc = fitz.open("data/tmp/"+self.do_filepath)
-        print(doc)
         for page in doc:
             for word in words:
                 matches = page.searchFor(word)
-                print(matches)
                 for match in matches:
                     highlight = page.addHighlightAnnot(match)
                     if color:
