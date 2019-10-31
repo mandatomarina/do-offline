@@ -8,6 +8,7 @@ import datetime
 import unidecode
 import fitz
 import argparse
+import json
 
 from settings import *
 import sendmail
@@ -103,7 +104,23 @@ class DO:
                 }
 
                 r = requests.post("https://slack.com/api/files.upload", params=payload, files={ 'file' : arquivo })
-                return r
+
+            #remove files
+            if 'plan' in self.settings['slack'] and self.settings['slack']['plan'] != 'paid':
+                payload={
+                    "token" : self.settings['slack']['token'],
+                    "ts_to" : datetime.datetime.timestamp(datetime.datetime.now()-datetime.timedelta(6*365/12)),
+                    "types" : "pdfs",
+                    "count" : 5
+                }
+
+                r = requests.post("https://slack.com/api/files.list", params=payload)
+                
+                response = json.loads(r.content)
+                for f in response['files']:
+                    if f['name'].startswith('DO'):
+                        requests.post("https://slack.com/api/files.delete", params={"token" : self.settings['slack']['token'], "file" : f['id']})
+
         if "email" in self.settings:
             sendmail.send(self.do_filepath, "Gerado via baixado.py",
                           self.do_filepath, open("data/"+self.do_filepath, 'rb'), self.settings["email"])
